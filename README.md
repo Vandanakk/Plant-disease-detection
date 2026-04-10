@@ -1,49 +1,58 @@
-# Plant Disease Detection — CNN + Transfer Learning
+# Plant Disease Detection — CLIP + DINOv2 + YOLO
 
-A deep learning system that detects plant diseases from leaf images using Convolutional Neural Networks and Transfer Learning. Trained on the PlantVillage dataset and deployed with Streamlit.
-
-## Tech Stack
-
-- **Language:** Python 3
-- **Deep Learning:** TensorFlow / Keras
-- **Model:** Transfer Learning (EfficientNet / ResNet pretrained on ImageNet)
-- **Dataset:** PlantVillage (38 disease classes across 14 crop species)
-- **Deployment:** Streamlit + Hugging Face Spaces
-
-## Features
-
-- Upload a leaf image → get instant disease prediction
-- Supports 38 plant disease classes
-- Real-time inference using a pretrained CNN
-- Deployed as a public web app
+A multi-model deep learning pipeline for identifying plant species and diagnosing
+leaf diseases from photos. Built on PlantDoc dataset with 30 disease categories
+across 10+ plant species.
 
 ## How It Works
 
-1. **Dataset** — PlantVillage dataset with 54,000+ images across 38 classes
-2. **Model** — pretrained EfficientNet fine-tuned on PlantVillage
-3. **Transfer Learning** — reused ImageNet weights, replaced final classification layer
-4. **Training** — fine-tuned for 10 epochs with data augmentation
-5. **Deployment** — Streamlit UI wraps the model for real-time image upload and prediction
+1. **YOLO** detects and crops the disease lesion from the leaf photo
+2. **DINOv2** identifies the plant species from the full image
+3. **CLIP + DCon Adapter** embeds the lesion into a 512-d feature vector
+4. **Hierarchical filtering** narrows candidates to species-relevant diseases only
+5. **Fused scoring** blends text-prompt similarity + feature bank retrieval
 
-## 🚀 How to Run Locally
+## Architecture Highlights
+
+- Transfer learning with frozen DINOv2-base backbone (768-d ViT)
+- Dilated convolution adapter (DConAdapter) with residual skip connection
+- Zero-shot capable: new diseases can be added by name alone (CLIP prompts)
+- Feature bank (KNN-style retrieval) for robustness without retraining
+
+## Models Used
+
+| Model       | Role                        | Source                          |
+|-------------|-----------------------------|---------------------------------|
+| YOLOv8      | Lesion detection            | Trained on PlantDoc             |
+| DINOv2-base | Species classification      | facebook/dinov2-base (fine-tuned)|
+| CLIP ViT-B  | Disease embedding + prompts | openai/clip-vit-base-patch32    |
+
+## Quick Start
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/plant-disease-detection.git
-cd plant-disease-detection
-
-pip install tensorflow streamlit pillow numpy
-
-streamlit run app.py
+pip install ultralytics transformers torch torchvision pillow opencv-python
 ```
 
-## 🌐 Live Demo
+Download model weights from Google Drive: [link_here]
 
-[Try it on Hugging Face Spaces](https://huggingface.co/spaces/YOUR_USERNAME/plant-disease) *(link added after deployment)*
+```python
+from predict import predict
+result = predict("your_leaf_image.jpg")
+print(result)  # {'species': 'Tomato', 'disease': 'Tomato leaf late blight', ...}
+```
 
-## What I Learned
+## Results
 
-- What Transfer Learning is and why it works — reusing features learned on ImageNet
-- How CNN layers progressively learn from edges → shapes → complex patterns
-- Why data augmentation helps prevent overfitting on image datasets
-- How to wrap a deep learning model in a Streamlit web app for real-time inference
-Copy
+- Tested on PlantDoc test set
+- Top-5 accuracy: [your number]%
+- Inference time: ~[X]s per image on CPU
+
+## Tech Stack
+
+Python · PyTorch · Hugging Face Transformers · Ultralytics YOLO ·
+OpenCV · Google Colab
+
+## Dataset
+
+[PlantDoc Dataset](https://github.com/pratikkayal/PlantDoc-Dataset) —
+2,569 images, 13 plant species, 30 disease categories.
